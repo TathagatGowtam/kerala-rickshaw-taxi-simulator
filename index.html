@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kerala Auto Rickshaw Taxi Simulator (കേരള ഓട്ടോ ടാക്സി)</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛺</text></svg>">
+</head>
+<body>
+
+  <!-- 3D WebGL Canvas Container -->
+  <div id="canvas-container">
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <!-- Rain & Monsoon Atmosphere Overlay -->
+  <div id="rain-overlay" class="rain-overlay"></div>
+
+  <!-- Toast Notification Popup -->
+  <div id="toast-notification">🚕 Welcome to Kerala!</div>
+
+  <!-- Heads-Up Display (HUD) -->
+  <div id="hud-container">
+
+    <!-- Top Navigation Bar -->
+    <div class="top-bar">
+      <!-- Brand & Title -->
+      <div class="brand-badge">
+        <span class="brand-icon">🛺</span>
+        <div>
+          <div class="brand-title">KERALA AUTO TAXI</div>
+          <div class="brand-sub">കേരള ഓട്ടോ റിക്ഷാ സിമുലേറ്റർ</div>
+        </div>
+      </div>
+
+      <!-- Quick Economy Status -->
+      <div class="status-pill-group">
+        <div class="status-pill wallet interactive" title="Current Earnings">
+          <span>💰</span>
+          <span id="wallet-val">₹50</span>
+        </div>
+        <div class="status-pill trips interactive" title="Completed Trips">
+          <span>🏁</span>
+          <span>Trips: <strong id="trips-val">0</strong></span>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div class="action-buttons interactive">
+        <button id="btn-weather" class="hud-btn" title="Toggle Weather (Key: M)">
+          <span>🌦️</span> Weather
+        </button>
+        <button id="btn-radio" class="hud-btn" title="Kerala FM / Chenda Melam (Key: R)">
+          <span>📻</span> Radio
+        </button>
+        <button id="btn-camera" class="hud-btn" title="Switch Camera View (Key: C)">
+          <span>🎥</span> View
+        </button>
+        <button id="btn-headlights" class="hud-btn active" title="Toggle Headlights (Key: L)">
+          <span>💡</span> Lights
+        </button>
+        <button id="btn-garage" class="hud-btn" title="Auto Garage & Decals">
+          <span>🔧</span> Garage
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Passenger & Mission Banner -->
+    <div class="mission-card interactive" id="mission-card">
+      <div class="passenger-avatar" id="passenger-avatar">👨🏽</div>
+      <div class="mission-details">
+        <div class="mission-title">CURRENT TRIP (ഓട്ടം)</div>
+        <div class="mission-name" id="mission-name">Searching for passenger...</div>
+        <div class="mission-meta">
+          <span class="mission-dest" id="mission-dest">Cruise along the backwaters highway</span>
+          <div class="satisfaction-bar" title="Passenger Satisfaction">
+            <span id="satisfaction-stars">★★★★★</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Cockpit HUD: Fare Meter, Speedometer, Minimap -->
+    <div class="cockpit-hud">
+
+      <!-- Authentic Kerala Auto Fare Meter -->
+      <div class="kerala-auto-meter interactive">
+        <div class="meter-header">
+          <div class="meter-brand">KERALA AUTO TARIFF</div>
+          <div class="meter-flag" id="meter-flag-status">FOR HIRE (വാടകയ്ക്ക്)</div>
+        </div>
+
+        <div class="meter-screens">
+          <!-- Fare in Rupees -->
+          <div class="meter-box">
+            <span class="meter-label">FARE (രൂപ)</span>
+            <div class="meter-digits" id="meter-fare-val">--</div>
+          </div>
+          <!-- Distance in KM -->
+          <div class="meter-box">
+            <span class="meter-label">DISTANCE (KM)</span>
+            <div class="meter-digits km" id="meter-dist-val">0.0</div>
+          </div>
+        </div>
+
+        <div class="meter-bottom">
+          <span>MIN FARE: ₹30 (1.5 KM)</span>
+          <button class="meter-lever-btn" id="meter-lever-btn">ഓട്ടം LEVER</button>
+        </div>
+      </div>
+
+      <!-- Speedometer & Gear Indicator -->
+      <div class="speed-cluster">
+        <div class="speed-display">
+          <div class="speed-number" id="speed-val">0</div>
+          <div class="speed-unit">KM/H</div>
+        </div>
+        <div class="gear-display">
+          <div class="gear-label">GEAR</div>
+          <div class="gear-value" id="gear-val">1</div>
+        </div>
+      </div>
+
+      <!-- Mini-Map / Radar -->
+      <div class="minimap-container">
+        <span class="minimap-compass">GPS RADAR</span>
+        <canvas id="minimap-canvas" width="140" height="140"></canvas>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Mobile Touch Controls -->
+  <div id="touch-controls">
+    <div class="touch-cluster">
+      <button class="touch-btn" id="touch-left">◀<span class="touch-label">STEER</span></button>
+      <button class="touch-btn" id="touch-right">▶<span class="touch-label">STEER</span></button>
+    </div>
+    <div class="touch-cluster">
+      <button class="touch-btn horn" id="touch-horn">📢<span class="touch-label">HORN</span></button>
+      <button class="touch-btn brake" id="touch-brake">🛑<span class="touch-label">BRAKE</span></button>
+      <button class="touch-btn gas" id="touch-gas">⚡<span class="touch-label">ACCEL</span></button>
+    </div>
+  </div>
+
+  <!-- Start & How-To-Play Modal -->
+  <div class="modal-backdrop active" id="start-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div style="font-size: 48px; margin-bottom: 8px;">🛺🌴</div>
+        <h1 class="modal-title">Kerala Auto Taxi Simulator</h1>
+        <div class="modal-subtitle">കേരളത്തിലൂടെ ഒരു ഓട്ടോ യാത്ര • God's Own Country</div>
+      </div>
+
+      <div class="modal-body">
+        <p style="margin-bottom: 14px;">
+          Drive your authentic 3-wheeled auto rickshaw through scenic Kerala backwaters, lush coconut groves, and bustling village roads! Pick up passengers, engage the fare meter, dodge roaring KSRTC buses, and earn rupees!
+        </p>
+
+        <h3 style="color: #ffd600; margin-bottom: 8px; font-size: 14px; text-transform: uppercase;">Keyboard Controls:</h3>
+        <div class="controls-grid">
+          <div class="control-item">
+            <span class="key-badge">W / ↑</span>
+            <span>Accelerate Throttle</span>
+          </div>
+          <div class="control-item">
+            <span class="key-badge">S / ↓</span>
+            <span>Brake / Reverse</span>
+          </div>
+          <div class="control-item">
+            <span class="key-badge">A / D / ← / →</span>
+            <span>Steer Handlebars</span>
+          </div>
+          <div class="control-item">
+            <span class="key-badge">SPACE</span>
+            <span>Handbrake Drift</span>
+          </div>
+          <div class="control-item">
+            <span class="key-badge">H</span>
+            <span>Auto Horn ("Paa-paam!")</span>
+          </div>
+          <div class="control-item">
+            <span class="key-badge">C</span>
+            <span>Switch Camera View</span>
+          </div>
+          <div class="control-item">
+            <span class="key-badge">M</span>
+            <span>Monsoon Rain / Sunshine</span>
+          </div>
+          <div class="control-item">
+            <span class="key-badge">R</span>
+            <span>Kerala FM (Chenda Melam)</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btn-start-game">START DRIVING (വണ്ടി വിട്!)</button>
+    </div>
+  </div>
+
+  <!-- Trip Receipt Modal (After Drop-off) -->
+  <div class="modal-backdrop" id="receipt-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div style="font-size: 38px;">🧾💰</div>
+        <h2 class="modal-title">Trip Completed!</h2>
+        <div class="modal-subtitle">യാത്ര വിജയകരമായി പൂർത്തിയായി</div>
+      </div>
+
+      <div class="receipt-box">
+        <div class="receipt-title">★ KERALA AUTO TAXI RECEIPT ★</div>
+        <div class="receipt-row">
+          <span>Passenger:</span>
+          <span id="receipt-passenger">ദാസൻ (Dasan)</span>
+        </div>
+        <div class="receipt-row">
+          <span>Destination:</span>
+          <span id="receipt-dest">Alappuzha Boat Jetty</span>
+        </div>
+        <div class="receipt-row">
+          <span>Distance:</span>
+          <span id="receipt-dist">1.8 KM</span>
+        </div>
+        <div class="receipt-row">
+          <span>Base Tariff:</span>
+          <span id="receipt-base">₹30</span>
+        </div>
+        <div class="receipt-row">
+          <span>Meter Running:</span>
+          <span id="receipt-meter">₹15</span>
+        </div>
+        <div class="receipt-row">
+          <span>Smooth Driving Tip:</span>
+          <span id="receipt-tip">₹35</span>
+        </div>
+        <div class="receipt-row total">
+          <span>TOTAL CASH EARNED:</span>
+          <span id="receipt-total">₹80</span>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btn-next-passenger">PICK UP NEXT PASSENGER (അടുത്ത ഓട്ടം!)</button>
+    </div>
+  </div>
+
+  <!-- Garage & Customization Modal -->
+  <div class="modal-backdrop" id="garage-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div style="font-size: 38px;">🔧🛺</div>
+        <h2 class="modal-title">Rickshaw Garage</h2>
+        <div class="modal-subtitle">Customize & Upgrade Your Auto</div>
+      </div>
+
+      <div class="modal-body">
+        <h4 style="color: var(--primary-yellow); margin-bottom: 6px;">Mechanical Upgrades:</h4>
+        <div class="garage-grid">
+          <div class="upgrade-card">
+            <div class="upgrade-name">⚡ Turbo Bajaj Engine</div>
+            <div class="upgrade-desc">+25% Acceleration & Top Speed for Kerala highways!</div>
+            <button class="upgrade-buy-btn" onclick="window.game.buyUpgrade('engine', 150)">UPGRADE (₹150)</button>
+          </div>
+          <div class="upgrade-card">
+            <div class="upgrade-name">🛞 Monsoon Grip Tires</div>
+            <div class="upgrade-desc">Enhanced steering stability and wet road grip!</div>
+            <button class="upgrade-buy-btn" onclick="window.game.buyUpgrade('handling', 100)">UPGRADE (₹100)</button>
+          </div>
+        </div>
+
+        <h4 style="color: var(--primary-yellow); margin-top: 18px; margin-bottom: 6px;">Visor Stickers & Malayalam Decals:</h4>
+        <div class="decal-picker">
+          <button class="decal-chip active" onclick="window.game.setDecal('⚡ KING OF ROADS ⚡')">⚡ KING OF ROADS ⚡</button>
+          <button class="decal-chip" onclick="window.game.setDecal('അമ്മേ നാരായണ')">അമ്മേ നാരായണ</button>
+          <button class="decal-chip" onclick="window.game.setDecal('ദാസനും വിജയനും')">ദാസനും വിജയനും</button>
+          <button class="decal-chip" onclick="window.game.setDecal('🌴 GOD\'S OWN COUNTRY 🌴')">🌴 GOD'S OWN COUNTRY 🌴</button>
+          <button class="decal-chip" onclick="window.game.setDecal('HORN OK PLEASE')">HORN OK PLEASE</button>
+        </div>
+      </div>
+
+      <button class="btn-secondary" id="btn-close-garage">CLOSE GARAGE</button>
+    </div>
+  </div>
+
+  <!-- JavaScript Libraries & Modules -->
+  <script src="js/three.min.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/world.js"></script>
+  <script src="js/physics.js"></script>
+  <script src="js/game.js"></script>
+
+</body>
+</html>
