@@ -339,25 +339,6 @@ class KeralaGame {
     }
   }
 
-    // Keyboard
-    window.addEventListener('keydown', (e) => this.handleKeyDown(e));
-    window.addEventListener('keyup', (e) => this.handleKeyUp(e));
-
-    // Touch Controls
-    this.bindTouchButton('touch-gas', 'throttle');
-    this.bindTouchButton('touch-brake', 'brake');
-    this.bindTouchButton('touch-left', 'left');
-    this.bindTouchButton('touch-right', 'right');
-
-    const touchHorn = document.getElementById('touch-horn');
-    if (touchHorn) {
-      touchHorn.addEventListener('touchstart', (e) => { e.preventDefault(); this.audio.startHorn(); });
-      touchHorn.addEventListener('touchend', (e) => { e.preventDefault(); this.audio.stopHorn(); });
-      touchHorn.addEventListener('mousedown', () => this.audio.startHorn());
-      touchHorn.addEventListener('mouseup', () => this.audio.stopHorn());
-    }
-  }
-
   bindTouchButton(elemId, actionKey) {
     const btn = document.getElementById(elemId);
     if (!btn) return;
@@ -648,30 +629,6 @@ class KeralaGame {
           this.showToast('✅ Checkpoint reached! +₹10 bonus');
         }
       });
-    }
-
-      // Accumulate distance
-      this.tripDistance += Math.abs(this.physics.velocity) * dt * 8.0;
-
-      // Update Fare: ₹30 min fare (for 1.5 km), then ₹15 per km
-      const distanceKm = this.tripDistance / 1000;
-      if (distanceKm > 1.5) {
-        this.currentFare = 30 + Math.floor((distanceKm - 1.5) * 15);
-      } else {
-        this.currentFare = 30;
-      }
-
-      const dx = playerPos.x - this.dropZone.x;
-      const dz = playerPos.z - this.dropZone.z;
-      const dist = Math.sqrt(dx * dx + dz * dz);
-
-      if (dist < this.dropZone.radius) {
-        if (Math.abs(this.physics.speedKmh) < 6.0) {
-          this.completeTrip();
-        } else {
-          this.showToast("🛑 Destination reached! Stop to collect fare!");
-        }
-      }
     }
   }
 
