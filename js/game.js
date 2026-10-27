@@ -291,7 +291,23 @@ class KeralaGame {
      INPUT HANDLERS
      ---------------------------------------------------------------------- */
   initControls() {
-    // Existing control init code remains unchanged
+    // Keyboard
+    window.addEventListener('keydown', (e) => this.handleKeyDown(e));
+    window.addEventListener('keyup', (e) => this.handleKeyUp(e));
+
+    // Touch Controls
+    this.bindTouchButton('touch-gas', 'throttle');
+    this.bindTouchButton('touch-brake', 'brake');
+    this.bindTouchButton('touch-left', 'left');
+    this.bindTouchButton('touch-right', 'right');
+
+    const touchHorn = document.getElementById('touch-horn');
+    if (touchHorn) {
+      touchHorn.addEventListener('touchstart', (e) => { e.preventDefault(); this.audio.startHorn(); });
+      touchHorn.addEventListener('touchend', (e) => { e.preventDefault(); this.audio.stopHorn(); });
+      touchHorn.addEventListener('mousedown', () => this.audio.startHorn());
+      touchHorn.addEventListener('mouseup', () => this.audio.stopHorn());
+    }
   }
 
   // ----------------------------------------------------------------------
