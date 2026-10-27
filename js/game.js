@@ -48,6 +48,7 @@ class KeralaGame {
     this.tripDistance = 0;
     this.currentFare = 0;
     this.passengerSatisfaction = 5.0; // 1 to 5 stars
+    this.checkpoints = []; // Array of checkpoint objects
     this.tripStartTime = 0;
 
     // Mini-map
@@ -73,6 +74,7 @@ class KeralaGame {
     this.initThree();
     this.initWorldAndPlayer();
     this.initControls();
+    this.initCheckpoints();
     this.initUI();
     this.updateHUDWallet();
 
@@ -289,6 +291,38 @@ class KeralaGame {
      INPUT HANDLERS
      ---------------------------------------------------------------------- */
   initControls() {
+    // Existing control init code remains unchanged
+  }
+
+  // ----------------------------------------------------------------------
+  // CHECKPOINT LOGIC
+  // ----------------------------------------------------------------------
+  initCheckpoints() {
+    // Remove any existing checkpoint meshes
+    if (this.checkpoints) {
+      this.checkpoints.forEach(cp => {
+        if (cp.mesh) this.scene.remove(cp.mesh);
+      });
+    }
+    this.checkpoints = [];
+    const playerZ = this.physics.position.z;
+    const spacing = 200; // meters between checkpoints
+    const count = 5;
+    for (let i = 1; i <= count; i++) {
+      const cpZ = playerZ - i * spacing;
+      const cpMesh = this.createZoneMarker(0x00e676, "CHECKPOINT");
+      cpMesh.position.set(4.2, 0.05, cpZ);
+      this.scene.add(cpMesh);
+      this.checkpoints.push({
+        mesh: cpMesh,
+        x: 4.2,
+        z: cpZ,
+        radius: 3.5,
+        claimed: false
+      });
+    }
+  }
+
     // Keyboard
     window.addEventListener('keydown', (e) => this.handleKeyDown(e));
     window.addEventListener('keyup', (e) => this.handleKeyUp(e));
@@ -554,6 +588,52 @@ class KeralaGame {
 
     // Check Dropoff
     if (this.missionState === 'in_transit' && this.dropZone) {
+      // Accumulate distance
+      this.tripDistance += Math.abs(this.physics.velocity) * dt * 8.0;
+
+      // Update Fare: ₹30 min fare (for 1.5 km), then ₹15 per km
+      const distanceKm = this.tripDistance / 1000;
+      if (distanceKm > 1.5) {
+        this.currentFare = 30 + Math.floor((distanceKm - 1.5) * 15);
+      } else {
+        this.currentFare = 30;
+      }
+
+      const dx = playerPos.x - this.dropZone.x;
+      const dz = playerPos.z - this.dropZone.z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+
+      if (dist < this.dropZone.radius) {
+        if (Math.abs(this.physics.speedKmh) < 6.0) {
+          this.completeTrip();
+        } else {
+          this.showToast("🛑 Destination reached! Stop to collect fare!");
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // CHECKPOINTS: spaced every 200 m, 5 total, each grants ₹10 bonus
+    // ------------------------------------------------------------------
+    if (this.checkpoints && this.checkpoints.length) {
+      this.checkpoints.forEach(cp => {
+        if (cp.claimed) return;
+        const dx = playerPos.x - cp.x;
+        const dz = playerPos.z - cp.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        if (dist < cp.radius) {
+          cp.claimed = true;
+          // Remove visual marker
+          if (cp.mesh) this.scene.remove(cp.mesh);
+          // Grant bonus
+          this.wallet += 10;
+          localStorage.setItem('kerala_rickshaw_wallet', this.wallet);
+          this.updateHUDWallet();
+          this.showToast('✅ Checkpoint reached! +₹10 bonus');
+        }
+      });
+    }
+
       // Accumulate distance
       this.tripDistance += Math.abs(this.physics.velocity) * dt * 8.0;
 
